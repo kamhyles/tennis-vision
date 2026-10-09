@@ -66,7 +66,7 @@ NEW-SESSION GENERALIZATION AND FINAL RAW-VIDEO VISUAL VALIDATION REMAIN OPEN
 - [x] Added COCO/center-localization evaluation and same-video benchmark tools
 - [x] Train RF-DETR Small on Apple MPS and evaluate the best EMA checkpoint
 - [x] Added timestamp-preserving normal-speed H.264 annotated-video export
-- [x] Added a lightweight README preview linked to a full-quality release asset
+- [x] Added a lightweight README preview linked to a full-quality GitHub player
 - [ ] Perform short-video raw RF-DETR visual validation
 
 ## Current Models
@@ -274,9 +274,11 @@ cross-session generalization.
   evaluation remain the applicable hardware validation.
 - The completed 27.35-second annotated export was published as a 21 MB,
   1920×1080, 60 FPS H.264 GitHub release asset. A separate 4.5 MB, 640-pixel
-  animated preview keeps the README lightweight while linking to the original
-  quality. Sampled frames were visually inspected for readable pose, ball, and
-  trajectory overlays; this was not a frame-by-frame accuracy review.
+  animated preview keeps the README lightweight. GitHub also accepted the
+  original export as an issue attachment and rendered it in the native video
+  player; the README preview links to that player while retaining the release as
+  a download. Sampled frames were visually inspected for readable pose, ball,
+  and trajectory overlays; this was not a frame-by-frame accuracy review.
 - RF-DETR short-video visual validation and same-footage three-backend benchmark
   have not yet been completed.
 
