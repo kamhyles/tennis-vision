@@ -20,9 +20,10 @@ claims.
 
 ## Demo
 
-[![Tennis Vision annotated RF-DETR demo](docs/assets/tennis-vision-demo.gif)](docs/assets/tennis-vision-demo.mp4)
+[![Tennis Vision annotated RF-DETR demo](docs/assets/tennis-vision-demo.gif)](https://github.com/kamhyles/tennis-vision/releases/download/demo-v0.3b/tennis-vision-demo-1080p60.mp4)
 
-*Click the preview to open the full 27-second, 720p demo.*
+*The inline preview is optimized for fast README loading. Click it to open the
+full 27-second, 1080p60 H.264 demo.*
 
 This run combines YOLO11n pose tracking with the fine-tuned RF-DETR ball detector
 and the image-space trajectory overlay. It was processed offline and exported at

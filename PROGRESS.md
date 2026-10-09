@@ -66,7 +66,7 @@ NEW-SESSION GENERALIZATION AND FINAL RAW-VIDEO VISUAL VALIDATION REMAIN OPEN
 - [x] Added COCO/center-localization evaluation and same-video benchmark tools
 - [x] Train RF-DETR Small on Apple MPS and evaluate the best EMA checkpoint
 - [x] Added timestamp-preserving normal-speed H.264 annotated-video export
-- [x] Added lightweight animated and full-video README demo assets
+- [x] Added a lightweight README preview linked to a full-quality release asset
 - [ ] Perform short-video raw RF-DETR visual validation
 
 ## Current Models
@@ -272,10 +272,11 @@ cross-session generalization.
   be retested inside the restricted execution environment because PyTorch reported
   `torch.backends.mps.is_available() == False`; prior local MPS training and
   evaluation remain the applicable hardware validation.
-- The completed 27.35-second annotated export was transcoded into a 4.5 MB,
-  640-pixel animated README preview and a 1.9 MB, 1280×720, 30 FPS H.264 full demo.
-  Sampled frames were visually inspected for readable pose, ball, and trajectory
-  overlays; this was not a frame-by-frame accuracy review.
+- The completed 27.35-second annotated export was published as a 21 MB,
+  1920×1080, 60 FPS H.264 GitHub release asset. A separate 4.5 MB, 640-pixel
+  animated preview keeps the README lightweight while linking to the original
+  quality. Sampled frames were visually inspected for readable pose, ball, and
+  trajectory overlays; this was not a frame-by-frame accuracy review.
 - RF-DETR short-video visual validation and same-footage three-backend benchmark
   have not yet been completed.
 
