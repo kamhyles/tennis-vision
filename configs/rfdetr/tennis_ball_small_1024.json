@@ -1,0 +1,46 @@
+{
+  "package_version": "1.10.1",
+  "model": "RFDETRSmall",
+  "pretrained_checkpoint": "rf-detr-small.pth",
+  "resolution": 1024,
+  "dataset_dir": "datasets/tennis_ball_reviewed_temporal",
+  "output_dir": "runs/rfdetr/tennis_ball_small_1024",
+  "training": {
+    "epochs": 50,
+    "batch_size": 1,
+    "eval_batch_size": 1,
+    "grad_accum_steps": 4,
+    "lr": 0.0001,
+    "lr_encoder": 0.00001,
+    "optimizer": "adamw",
+    "weight_decay": 0.0001,
+    "seed": 7,
+    "device": "mps",
+    "num_workers": 0,
+    "dataset_file": "roboflow",
+    "multi_scale": false,
+    "expanded_scales": false,
+    "scale_jitter": false,
+    "augmentation_backend": "torchvision",
+    "aug_config": {},
+    "use_ema": true,
+    "early_stopping": true,
+    "early_stopping_use_ema": true,
+    "early_stopping_patience": 10,
+    "early_stopping_min_delta": 0.001,
+    "skip_best_epochs": 3,
+    "checkpoint_interval": 5,
+    "run_test": true,
+    "progress_bar": "tqdm",
+    "tensorboard": true,
+    "class_names": [
+      "tennis ball"
+    ]
+  },
+  "notes": {
+    "ground_truth": "human-reviewed Roboflow/Astra COCO annotations",
+    "prelabels": "TrackNet suggestions only; not ground truth",
+    "split": "contiguous source-frame ranges with one-second guard bands",
+    "limitation": "This dataset originates from one recording and is not sufficient evidence of cross-session generalization."
+  }
+}
