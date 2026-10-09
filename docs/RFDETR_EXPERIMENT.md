@@ -96,13 +96,11 @@ an explicit follow-up experiment, not mixed into this baseline.
 
 RF-DETR is isolated from the working YOLO/TrackNet environment:
 
-The inspected project environment uses Python 3.12.4, PyTorch 2.14.0,
-torchvision 0.29.0, NumPy 2.5.3, OpenCV 4.14, and Ultralytics 8.4.155. RF-DETR's
-core PyTorch/torchvision minimums do not directly conflict with those versions,
-but `rfdetr`, Transformers 5.x, Pydantic 2.x, Supervision 0.29+, Lightning 2.6,
-and TorchMetrics training dependencies are absent. No package was installed,
-upgraded, or downgraded in the working environment. A separate environment keeps
-those additions from destabilizing the validated pose, YOLO, and TrackNet stack.
+The core project environment uses Python 3.12.4, PyTorch 2.14.0, torchvision
+0.29.0, NumPy 2.5.3, OpenCV 4.14, and Ultralytics 8.4.155. RF-DETR's additional
+Transformers, Pydantic, Supervision, Lightning, and TorchMetrics dependencies were
+installed into `.venv-rfdetr`, not the working `.venv`. This kept the validated
+pose, YOLO, and TrackNet stack unchanged.
 
 ```bash
 python3 -m venv .venv-rfdetr
@@ -115,22 +113,19 @@ The checked-in config uses RF-DETR Small, 1024 input, 50 maximum epochs,
 micro-batch 1, four-step gradient accumulation, AdamW, learning rate `1e-4`,
 encoder learning rate `1e-5`, EMA, seed 7, and validation early stopping with
 patience 10. It writes ignored artifacts to
-`runs/rfdetr/tennis_ball_small_1024/`; the expected best model is
+`runs/rfdetr/tennis_ball_small_1024/`; the best model is
 `checkpoint_best_total.pth`.
 
 Official 1.10.1 code maps `device="mps"` into PyTorch Lightning's MPS
 accelerator. CPU/MPS require an explicit integer batch size rather than CUDA's
-auto-batch probe. Historical RF-DETR releases had MPS unsupported-operation
-reports, so `--check-only` and a short real run are still required on the actual
-Mac. The current Codex process reports PyTorch built with MPS but MPS unavailable,
-so no training was launched here. If the local process also reports MPS
-unavailable or 1024 training is impractical, the clean alternative is the same
-script with `--device cuda` on an NVIDIA GPU host; inference may still run on the
-Mac afterward.
+auto-batch probe. The baseline completed on Apple MPS with micro-batch 1 and four
+gradient-accumulation steps. It validated epochs 0–16, selected the EMA checkpoint
+from epoch 6 (validation mAP@50:95 0.639), and took approximately 57 minutes.
+File timestamps span 13:28:42–14:26:05 on September 21, 2026.
 
 ## Evaluation and application use
 
-After training:
+Evaluate or run the trained checkpoint:
 
 ```bash
 .venv-rfdetr/bin/python tools/evaluate_rfdetr_ball.py \
@@ -150,6 +145,26 @@ Evaluation reports RF-DETR's COCO metrics plus raw center error in pixels and as
 a fraction of image diagonal, recall, misses, false positives, extra detections,
 IoU, and inference timing. These same-recording results are diagnostic only.
 
+### Guarded test results
+
+| Metric | Result |
+|---|---:|
+| mAP@50:95 | 0.534 |
+| mAP@50 | 0.924 |
+| mAP@75 | 0.653 |
+| mAR | 0.642 |
+| precision / recall / F1 | 1.000 / 0.879 / 0.935 |
+| annotated frames with a candidate at confidence 0.25 | 33 / 33 |
+| median / P90 / mean center error | 0.57 / 1.42 / 21.16 px |
+| median IoU | 0.802 |
+| extra detections on annotated frames | 17 |
+| 1024px MPS inference | 284.6 ms mean / 3.51 FPS |
+
+The center-error distribution is highly skewed: 90.9% of matched centers were
+within 5 px, while a few severe wrong-candidate selections dominate the mean.
+The test split contains no negative images, so false positives on ball-absent
+frames were not measured.
+
 The RF-DETR adapter returns every threshold-passing `tennis ball` candidate in
 original coordinates. The existing tracker chooses highest confidence only when
 acquiring a track; once active, it chooses the nearest candidate inside its
@@ -167,5 +182,6 @@ For same-footage operational comparison (not accuracy):
   --device mps --max-frames 300
 ```
 
-No trained checkpoint exists yet, so no COCO metrics, center-error results,
-RF-DETR inference timing, short-video inference, or visual comparison are claimed.
+Training and still-image evaluation are complete. A short source-video run,
+same-footage three-backend benchmark, user visual comparison, and new-recording
+generalization test remain outstanding.

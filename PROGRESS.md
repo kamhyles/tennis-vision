@@ -4,8 +4,8 @@
 V0.3B — Fine-tuned RF-DETR tennis-ball detector experiment
 
 ## Status
-REVIEWED DATA VALIDATED AND TEMPORALLY SPLIT; TRAINING/INFERENCE PREPARED BUT
-NOT RUN BECAUSE RF-DETR IS NOT INSTALLED AND MPS IS UNAVAILABLE IN THIS PROCESS
+RF-DETR SMALL TRAINED AND EVALUATED ON THE GUARDED SAME-RECORDING TEST SPLIT;
+NEW-SESSION GENERALIZATION AND FINAL RAW-VIDEO VISUAL VALIDATION REMAIN OPEN
 
 ## Completed
 - [x] Modular project scaffold and `python main.py` entry point
@@ -64,7 +64,7 @@ NOT RUN BECAUSE RF-DETR IS NOT INSTALLED AND MPS IS UNAVAILABLE IN THIS PROCESS
   TrackNet, or pose model loading
 - [x] Added raw RF-DETR box, confidence, center, and trajectory visualization
 - [x] Added COCO/center-localization evaluation and same-video benchmark tools
-- [ ] Train RF-DETR and evaluate a resulting checkpoint
+- [x] Train RF-DETR Small on Apple MPS and evaluate the best EMA checkpoint
 - [ ] Perform short-video raw RF-DETR visual validation
 
 ## Current Models
@@ -80,10 +80,11 @@ NOT RUN BECAUSE RF-DETR IS NOT INSTALLED AND MPS IS UNAVAILABLE IN THIS PROCESS
   The Hugging Face artifact tagged MIT is byte-identical to the Google Drive
   checkpoint linked by the upstream repository. The upstream repository itself
   has no explicit license; see `THIRD_PARTY.md` before redistribution.
-- Prepared RF-DETR experiment: official RF-DETR Small from `rfdetr==1.10.1`,
-  initialized from `rf-detr-small.pth`, fine-tuned at 1024×1024 on the reviewed
-  one-class data. No fine-tuned checkpoint exists yet, so this is selectable only
-  after training and is not claimed to outperform TrackNet.
+- Experimental RF-DETR: official RF-DETR Small from `rfdetr==1.10.1`, initialized
+  from `rf-detr-small.pth` and fine-tuned at 1024×1024 on the reviewed one-class
+  data. The best EMA checkpoint is
+  `runs/rfdetr/tennis_ball_small_1024/checkpoint_best_total.pth`. Same-recording
+  evaluation is promising but does not establish superiority over TrackNet.
 
 ## TrackNet Input / Output Contract
 - Training domain reported upstream: tennis broadcast clips from ten videos,
@@ -171,13 +172,11 @@ cross-session generalization.
 - Augmentation: torchvision backend with optional augmentation config empty;
   multi-scale, expanded scales, and scale jitter disabled to avoid destroying
   tiny targets. Required resize/normalization remains.
-- Requested device: MPS with explicit batch size. Official 1.10.1 maps MPS to the
-  Lightning MPS accelerator, but the current process reports MPS unavailable.
-  Clean fallback is the same pinned script on a CUDA host, not a silent CPU run.
-- Planned output: `runs/rfdetr/tennis_ball_small_1024/`, expected best checkpoint
-  `checkpoint_best_total.pth`. Training duration, best checkpoint, COCO metrics,
-  center errors, RF-DETR inference speed, and real-video results are all TBD
-  because training did not run.
+- Actual device: Apple MPS with explicit micro-batch 1. Training validated epochs
+  0–16, selected the EMA checkpoint from epoch 6, and ran for approximately
+  57 minutes (13:28:42–14:26:05 local file timestamps).
+- Output: `runs/rfdetr/tennis_ball_small_1024/`; best checkpoint
+  `checkpoint_best_total.pth` (126 MB, ignored by Git).
 
 ## Validation Performed
 - V0.1 physical webcam validation completed by the user: the camera opened and
@@ -245,9 +244,22 @@ cross-session generalization.
   misses, false positives, extras, recall, and IoU.
 - Python compilation, the 52-test suite, reviewed-dataset inspection, prepared
   split creation, and application help/CLI checks completed successfully.
-- RF-DETR initialization, checkpoint loading, inference, training, evaluation,
-  benchmarking, and real-video tests were not run: `rfdetr` is not installed,
-  no fine-tuned checkpoint exists, and MPS is unavailable in this process.
+- RF-DETR 1.10.1 trained successfully in the isolated `.venv-rfdetr` environment
+  on Apple MPS. Validation ran for epochs 0–16; best EMA mAP@50:95 was 0.639 at
+  epoch 6, which supplied `checkpoint_best_total.pth`.
+- Guarded test evaluation produced mAP@50:95 0.534, mAP@50 0.924, mAP@75 0.653,
+  mAR 0.642, precision 1.000, recall 0.879, and F1 0.935.
+- At confidence 0.25 the center-localization pass returned a candidate on all 33
+  annotated test images with zero misses, but emitted 17 extra detections. There
+  were no negative test images, so false-positive behavior on ball-absent frames
+  was not measured.
+- Matched-center error was median 0.57 px, P90 1.42 px, and mean 21.16 px. The
+  mean is dominated by a few severe candidate-selection outliers: 90.9% of
+  matched centers were within 5 px. Median IoU was 0.802.
+- RF-DETR center evaluation measured mean 284.6 ms and median 239.6 ms per image,
+  or about 3.51 inference FPS at 1024×1024 on Apple MPS.
+- RF-DETR short-video visual validation and same-footage three-backend benchmark
+  have not yet been completed.
 
 ## Observed Performance
 V0.1 pose-only webcam pipeline: approximately 15 FPS, reported from local user
@@ -263,8 +275,10 @@ be measured locally.
 Dataset smoke build on CPU: 12 synthetic source frames scanned in 9.1 seconds.
 The completed real-dataset generator performance was not recorded in this task.
 
-RF-DETR training duration, inference latency/FPS, COCO metrics, center error,
-recall, misses, and false positives: TBD until a fine-tuned checkpoint exists.
+RF-DETR Apple MPS training: approximately 57 minutes for 17 validation epochs;
+best EMA validation mAP@50:95 0.639 at epoch 6. Guarded test mAP@50:95 0.534;
+center-evaluation throughput approximately 3.51 FPS at 1024×1024. These are
+same-recording experimental results, not cross-session evidence.
 
 Resolution: Configured for 1280x720 capture and 640-pixel inference by default;
 actual camera-negotiated resolution not yet validated.
@@ -306,9 +320,11 @@ Hardware: Local V0.1 hardware details not recorded.
 - Direct 16:9-to-square RF-DETR resizing distorts aspect ratio, though prediction
   coordinates are mapped back to the source frame. The 1024 input improves tiny
   target sampling at substantial memory and latency cost.
-- Official current RF-DETR supports MPS, but training/inference have not been
-  validated on the user's actual Mac. Historical MPS unsupported-operation issues
-  justify a short smoke run before committing to a full training run.
+- RF-DETR training and still-image evaluation ran on Apple MPS, but end-to-end
+  video throughput and raw visual stability remain unvalidated.
+- The test split has no ball-absent frames, and RF-DETR produced 17 extra
+  detections on its 33 positive frames. Negative-frame false positives and
+  multiple-candidate selection need explicit testing.
 - The RF-DETR confidence threshold (0.25) and tracker motion gate are provisional
   and must be evaluated, not treated as calibrated.
 
@@ -364,14 +380,12 @@ Hardware: Local V0.1 hardware details not recorded.
   supported CUDA host and record the actual device and duration.
 
 ## Next Step
-Create an isolated RF-DETR environment, install `requirements-rfdetr.txt`, and
-run `tools/train_rfdetr_ball.py --check-only` on the actual training machine.
-If MPS is available and the 1024 smoke run is practical, run the pinned baseline;
-otherwise run the unchanged config with `--device cuda` on an NVIDIA GPU host.
-Then evaluate `checkpoint_best_total.pth`, benchmark a short shared footage
-section, and have the user visually compare raw RF-DETR localization against
-TrackNet. Record actual duration, checkpoint, COCO/center metrics, throughput,
-and visual findings. Acquire another recording for a true held-out test.
+Run the best RF-DETR checkpoint on a short representative source-video section,
+benchmark YOLO, TrackNet, and RF-DETR on identical frames, and have the user
+visually assess whether raw RF-DETR centers remain locked to the moving ball.
+Investigate duplicate/outlier candidate selection without smoothing coordinates.
+Then acquire a completely new recording containing both ball-present and
+ball-absent frames for a true held-out generalization and false-positive test.
 
 ## Future Milestones
 - V0.3 Racket tracking
