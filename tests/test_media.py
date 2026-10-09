@@ -5,7 +5,7 @@ import unittest
 import cv2
 import numpy as np
 
-from tennis_vision.media import FrameSource
+from tennis_vision.media import FrameSource, TimestampFrameSampler
 
 
 class FakeCapture:
@@ -67,6 +67,21 @@ class FrameSourceTests(unittest.TestCase):
         assert second is not None
         self.assertAlmostEqual(second.metadata.timestamp_seconds, 1.0 / 60.0)
         self.assertFalse(second.metadata.timing_is_estimated)
+
+
+class TimestampFrameSamplerTests(unittest.TestCase):
+    def test_samples_120_fps_source_to_60_fps_without_slow_motion(self) -> None:
+        sampler = TimestampFrameSampler(60.0)
+
+        copies = [sampler.copies_for(index / 120.0) for index in range(5)]
+
+        self.assertEqual(copies, [1, 0, 1, 0, 1])
+
+    def test_duplicates_after_a_timestamp_gap_to_preserve_duration(self) -> None:
+        sampler = TimestampFrameSampler(30.0)
+        self.assertEqual(sampler.copies_for(0.0), 1)
+
+        self.assertEqual(sampler.copies_for(0.1), 3)
 
 
 if __name__ == "__main__":

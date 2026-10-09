@@ -65,10 +65,10 @@ def draw_pose(
 def draw_fps(
     frame: npt.NDArray[np.uint8], fps: float, config: VisualizationConfig
 ) -> None:
-    """Draw a legible FPS counter in place."""
+    """Draw a legible processing-throughput counter in place."""
     cv2.putText(
         frame,
-        f"FPS: {fps:.1f}",
+        f"Processing FPS: {fps:.1f}",
         (16, 32),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.8,

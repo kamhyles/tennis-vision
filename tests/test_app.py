@@ -57,6 +57,22 @@ class ArgumentTests(unittest.TestCase):
         self.assertEqual(args.rfdetr_checkpoint, "fine-tuned.pth")
         self.assertEqual(args.rfdetr_input_size, 1024)
 
+    def test_video_export_and_headless_preview_are_configurable(self) -> None:
+        args = parse_args(
+            [
+                "--video",
+                "clip.mov",
+                "--output-video",
+                "outputs/annotated.mp4",
+                "--output-fps",
+                "30",
+                "--no-preview",
+            ]
+        )
+        self.assertEqual(args.output_video, "outputs/annotated.mp4")
+        self.assertEqual(args.output_fps, 30.0)
+        self.assertTrue(args.no_preview)
+
 
 if __name__ == "__main__":
     unittest.main()

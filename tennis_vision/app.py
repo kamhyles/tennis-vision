@@ -18,7 +18,7 @@ from tennis_vision.config import (
     VisualizationConfig,
 )
 from tennis_vision.diagnostics import BallRunDiagnostics, DetectionCsvWriter
-from tennis_vision.media import open_source
+from tennis_vision.media import AnnotatedVideoWriter, open_source
 from tennis_vision.performance import PerformanceMonitor
 from tennis_vision.tracking.ball import BallTracker
 from tennis_vision.vision.ball import YOLOBallDetector
@@ -69,6 +69,13 @@ def _positive_interval(value: str) -> int:
     return interval
 
 
+def _positive_float(value: str) -> float:
+    number = float(value)
+    if not 0.0 < number < float("inf"):
+        raise argparse.ArgumentTypeError("must be a finite positive number")
+    return number
+
+
 def run(
     camera_config: CameraConfig,
     pose_config: PoseConfig,
@@ -84,6 +91,9 @@ def run(
     performance_log_interval: int = 120,
     detections_output: str | None = None,
     maximum_frames: int | None = None,
+    output_video: str | None = None,
+    output_fps_limit: float = 60.0,
+    show_preview: bool = True,
 ) -> None:
     """Process webcam or video frames until q or clean video EOF."""
     pose_tracker = PoseTracker(pose_config)
@@ -107,6 +117,9 @@ def run(
     diagnostics: BallRunDiagnostics | None = None
     performance: PerformanceMonitor | None = None
     fps_meter: FpsMeter | None = None
+    video_writer: AnnotatedVideoWriter | None = None
+    completed_normally = False
+    writer_error: RuntimeError | OSError | None = None
     try:
         visualization_config = VisualizationConfig()
         fps_meter = FpsMeter()
@@ -165,9 +178,29 @@ def run(
             pipeline_fps = fps_meter.tick()
             draw_fps(frame, pipeline_fps, visualization_config)
             performance.maybe_log(metadata.frame_index, pipeline_fps)
-            cv2.imshow(WINDOW_NAME, frame)
 
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+            if output_video is not None:
+                if video_writer is None:
+                    source_height, source_width = frame.shape[:2]
+                    export_fps = min(
+                        source.source_fps or output_fps_limit, output_fps_limit
+                    )
+                    video_writer = AnnotatedVideoWriter(
+                        output_video,
+                        width=source_width,
+                        height=source_height,
+                        output_fps=export_fps,
+                    )
+                    print(
+                        f"Export: {output_video}; {export_fps:.3f} FPS H.264 "
+                        "MP4 (video only)"
+                    )
+                video_writer.write(frame, metadata.timestamp_seconds)
+
+            if show_preview:
+                cv2.imshow(WINDOW_NAME, frame)
+
+            if show_preview and cv2.waitKey(1) & 0xFF == ord("q"):
                 break
             if (
                 maximum_frames is not None
@@ -175,11 +208,21 @@ def run(
             ):
                 print(f"Stopped after {maximum_frames} frames.")
                 break
+        completed_normally = True
     finally:
+        if video_writer is not None:
+            if completed_normally:
+                try:
+                    video_writer.close()
+                except (RuntimeError, OSError) as exc:
+                    writer_error = exc
+            else:
+                video_writer.abort()
         if csv_writer is not None:
             csv_writer.close()
         source.release()
-        cv2.destroyAllWindows()
+        if show_preview:
+            cv2.destroyAllWindows()
         if diagnostics is not None:
             print(
                 f"Ball diagnostics ({ball_detector.name}): "
@@ -190,6 +233,8 @@ def run(
                 f"Performance: pipeline={fps_meter.fps:.1f} FPS; "
                 f"{performance.summary()}"
             )
+        if writer_error is not None:
+            raise writer_error
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -261,6 +306,21 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=None,
         help="stop after N source frames (useful for experiments)",
     )
+    parser.add_argument(
+        "--output-video",
+        help="write timestamp-preserving annotated H.264 video to an .mp4 file",
+    )
+    parser.add_argument(
+        "--output-fps",
+        type=_positive_float,
+        default=60.0,
+        help="maximum export FPS (default: 60; source timing is preserved)",
+    )
+    parser.add_argument(
+        "--no-preview",
+        action="store_true",
+        help="process without opening the live OpenCV preview window",
+    )
     return parser.parse_args(argv)
 
 
@@ -268,6 +328,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     if args.performance_log_interval < 0:
         print("Error: --performance-log-interval cannot be negative")
+        return 2
+    if args.output_video is not None and args.video is None:
+        print("Error: --output-video currently requires --video")
         return 2
     try:
         run(
@@ -302,6 +365,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             performance_log_interval=args.performance_log_interval,
             detections_output=args.detections_output,
             maximum_frames=args.max_frames,
+            output_video=args.output_video,
+            output_fps_limit=args.output_fps,
+            show_preview=not args.no_preview,
         )
     except (RuntimeError, OSError, ValueError) as exc:
         print(f"Error: {exc}")

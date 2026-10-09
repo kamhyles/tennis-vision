@@ -1,7 +1,7 @@
 # Tennis Vision
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-52%20passed-2ea44f)
+![Tests](https://img.shields.io/badge/tests-55%20passed-2ea44f)
 ![Status](https://img.shields.io/badge/status-experimental-orange)
 
 Tennis Vision is an incremental computer-vision system for analyzing tennis
@@ -18,6 +18,20 @@ claims.
 > results, but it has not passed a new-session generalization test or final visual
 > validation. It is not yet established as the primary detector.
 
+## Demo
+
+[![Tennis Vision annotated RF-DETR demo](docs/assets/tennis-vision-demo.gif)](docs/assets/tennis-vision-demo.mp4)
+
+*Click the preview to open the full 27-second, 720p demo.*
+
+This run combines YOLO11n pose tracking with the fine-tuned RF-DETR ball detector
+and the image-space trajectory overlay. It was processed offline and exported at
+normal playback speed; the on-screen **Processing FPS** value reports inference
+throughput, not video playback speed.
+
+The footage comes from the same recording used to develop the initial dataset, so
+it demonstrates the current pipeline but does not establish new-session accuracy.
+
 ## What works today
 
 - YOLO11n Pose tracking with a compact 17-keypoint skeleton overlay
@@ -31,8 +45,9 @@ claims.
 - Raw bounding boxes, centers, confidence, trails, and detector labels
 - Independent pose and ball inference cadences for high-frame-rate video
 - Per-stage timing, continuity diagnostics, and optional per-frame CSV output
+- Timestamp-preserving, normal-speed H.264 export for offline analysis
 - Leakage-resistant dataset generation, validation, training, and evaluation tools
-- 52 automated tests covering pose, media timing, detectors, tracking, datasets,
+- 55 automated tests covering pose, media timing, detectors, tracking, datasets,
   RF-DETR conversion, and localization metrics
 
 ## Current experimental findings
@@ -168,6 +183,29 @@ Useful controls:
 - Use `--pose-every N` and `--ball-every N` to control inference cadence.
 - Use `--detections-output outputs/run.csv` for per-frame results.
 - Run `python main.py --help` for every option.
+
+### Export a normal-speed annotated video
+
+Offline inference may take much longer than the source video, but the exporter
+uses source timestamps so the finished MP4 plays at normal speed. FFmpeg must be
+available on `PATH`; on macOS it can be installed with `brew install ffmpeg`.
+
+```bash
+source .venv-rfdetr/bin/activate
+
+python main.py \
+  --video videos/IMG_8356.MOV \
+  --ball-detector rfdetr \
+  --device mps \
+  --pose-every 8 \
+  --output-video outputs/annotated-demo.mp4 \
+  --no-preview
+```
+
+The default export ceiling is 60 FPS for browser compatibility. Use
+`--output-fps 30` for a smaller demo or `--output-fps 120` to retain the source's
+full temporal rate. Exported MP4s are video-only, and the command refuses to
+overwrite an existing output file.
 
 ## Ball detector backends
 

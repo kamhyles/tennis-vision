@@ -65,6 +65,8 @@ NEW-SESSION GENERALIZATION AND FINAL RAW-VIDEO VISUAL VALIDATION REMAIN OPEN
 - [x] Added raw RF-DETR box, confidence, center, and trajectory visualization
 - [x] Added COCO/center-localization evaluation and same-video benchmark tools
 - [x] Train RF-DETR Small on Apple MPS and evaluate the best EMA checkpoint
+- [x] Added timestamp-preserving normal-speed H.264 annotated-video export
+- [x] Added lightweight animated and full-video README demo assets
 - [ ] Perform short-video raw RF-DETR visual validation
 
 ## Current Models
@@ -182,7 +184,7 @@ cross-session generalization.
 - V0.1 physical webcam validation completed by the user: the camera opened and
   the pose skeleton tracked successfully at approximately 15 FPS.
 - Python syntax/bytecode compilation completed successfully.
-- 52 non-camera unit tests passed in the project virtual environment, including
+- 55 non-camera unit tests passed in the project virtual environment, including
   all previous pose, YOLO, TrackNet, media, and tracker tests.
 - Synthetic tracker tests passed for continuous motion, temporary misses,
   recovery, implausible jumps, prolonged disappearance, a new track after loss,
@@ -242,7 +244,7 @@ cross-session generalization.
   exact-class filtering, confidence ordering, no detections, threshold/config
   forwarding, and multiple candidates. Center metric tests cover exact/error,
   misses, false positives, extras, recall, and IoU.
-- Python compilation, the 52-test suite, reviewed-dataset inspection, prepared
+- Python compilation, the 55-test suite, reviewed-dataset inspection, prepared
   split creation, and application help/CLI checks completed successfully.
 - RF-DETR 1.10.1 trained successfully in the isolated `.venv-rfdetr` environment
   on Apple MPS. Validation ran for epochs 0–16; best EMA mAP@50:95 was 0.639 at
@@ -258,6 +260,22 @@ cross-session generalization.
   matched centers were within 5 px. Median IoU was 0.802.
 - RF-DETR center evaluation measured mean 284.6 ms and median 239.6 ms per image,
   or about 3.51 inference FPS at 1024×1024 on Apple MPS.
+- Offline video-export tests cover CLI selection, 120-to-60 FPS timestamp
+  sampling, and gap duplication. A real FFmpeg smoke export encoded 120 synthetic
+  timestamped frames as a one-second, 60-frame H.264 MP4.
+- A headless end-to-end application smoke run analyzed four frames from
+  `videos/IMG_8356.MOV` with the actual YOLO pose and ball models and exported a
+  readable 1920×1080 H.264/yuv420p MP4 at 60 FPS. This validated the export path,
+  not the full RF-DETR video or its visual accuracy.
+- A separate two-frame export loaded the real fine-tuned RF-DETR checkpoint,
+  produced direct detections on CPU, and wrote a readable H.264 MP4. MPS could not
+  be retested inside the restricted execution environment because PyTorch reported
+  `torch.backends.mps.is_available() == False`; prior local MPS training and
+  evaluation remain the applicable hardware validation.
+- The completed 27.35-second annotated export was transcoded into a 4.5 MB,
+  640-pixel animated README preview and a 1.9 MB, 1280×720, 30 FPS H.264 full demo.
+  Sampled frames were visually inspected for readable pose, ball, and trajectory
+  overlays; this was not a frame-by-frame accuracy review.
 - RF-DETR short-video visual validation and same-footage three-backend benchmark
   have not yet been completed.
 
